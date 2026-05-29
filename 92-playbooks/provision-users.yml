@@ -1,0 +1,102 @@
+- hosts: localhost
+  gather_facts: false
+  become: true
+  vars:
+    admin_username: "{{ lookup('env', 'ADMIN_USERNAME') }}"
+    admin_password: "{{ lookup('env', 'ADMIN_PASSWORD') }}"
+    admin_ssh_public_key: "{{ lookup('env', 'ADMIN_SSH_PUBLIC_KEY') | default('', true) }}"
+    admin_proxmox_user: "{{ lookup('env', 'ADMIN_PROXMOX_USER') }}"
+    admin_proxmox_role: "{{ lookup('env', 'ADMIN_PROXMOX_ROLE') | default('Administrator', true) }}"
+    service_proxmox_user: "{{ lookup('env', 'SERVICE_PROXMOX_USER') }}"
+    service_proxmox_role: "{{ lookup('env', 'SERVICE_PROXMOX_ROLE') | default('PVEAdmin', true) }}"
+    service_token_name: "{{ lookup('env', 'SERVICE_TOKEN_NAME') | default('bootstrap', true) }}"
+    service_token_output_path: "{{ lookup('env', 'SERVICE_TOKEN_OUTPUT_PATH') | default('/var/lib/homelab-bootstrap/service-token.json', true) }}"
+  tasks:
+    - name: Ensure passlib is installed for password_hash filter
+      ansible.builtin.apt:
+        name: python3-passlib
+        state: present
+        update_cache: true
+
+    - name: Ensure admin Linux user exists
+      ansible.builtin.user:
+        name: "{{ admin_username }}"
+        shell: /bin/bash
+        create_home: true
+        groups: sudo
+        append: true
+        password: "{{ admin_password | password_hash('sha512') }}"
+
+    - name: Ensure admin .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/{{ admin_username }}/.ssh"
+        state: directory
+        owner: "{{ admin_username }}"
+        group: "{{ admin_username }}"
+        mode: '0700'
+      when: admin_ssh_public_key | length > 0
+
+    - name: Ensure admin authorized_keys contains configured key
+      ansible.builtin.lineinfile:
+        path: "/home/{{ admin_username }}/.ssh/authorized_keys"
+        create: true
+        line: "{{ admin_ssh_public_key }}"
+        owner: "{{ admin_username }}"
+        group: "{{ admin_username }}"
+        mode: '0600'
+        state: present
+      when: admin_ssh_public_key | length > 0
+
+    - name: Check whether admin Proxmox user exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        pveum user list | awk 'NR>1 {print $1}' | grep -Fx "{{ admin_proxmox_user }}"
+      register: admin_user_exists
+      changed_when: false
+      failed_when: admin_user_exists.rc not in [0, 1]
+
+    - name: Create admin Proxmox user
+      ansible.builtin.command: "pveum user add {{ admin_proxmox_user }} --comment HomelabAdmin"
+      when: admin_user_exists.rc == 1
+
+    - name: Ensure admin Proxmox ACL
+      ansible.builtin.command: "pveum aclmod / -user {{ admin_proxmox_user }} -role {{ admin_proxmox_role }}"
+      changed_when: false
+
+    - name: Check whether service Proxmox user exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        pveum user list | awk 'NR>1 {print $1}' | grep -Fx "{{ service_proxmox_user }}"
+      register: service_user_exists
+      changed_when: false
+      failed_when: service_user_exists.rc not in [0, 1]
+
+    - name: Create service Proxmox user
+      ansible.builtin.command: "pveum user add {{ service_proxmox_user }} --comment HomelabService"
+      when: service_user_exists.rc == 1
+
+    - name: Ensure service Proxmox ACL
+      ansible.builtin.command: "pveum aclmod / -user {{ service_proxmox_user }} -role {{ service_proxmox_role }}"
+      changed_when: false
+
+    - name: Check whether service API token exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        pveum user token list "{{ service_proxmox_user }}" | awk 'NR>1 {print $1}' | grep -Fx "{{ service_token_name }}"
+      register: service_token_exists
+      changed_when: false
+      failed_when: service_token_exists.rc not in [0, 1]
+
+    - name: Create service API token and capture secret
+      ansible.builtin.command: "pveum user token add {{ service_proxmox_user }} {{ service_token_name }} --privsep 1 --output-format json"
+      register: service_token_create
+      when: service_token_exists.rc == 1
+      no_log: true
+
+    - name: Persist new service token response for operator handoff
+      ansible.builtin.copy:
+        dest: "{{ service_token_output_path }}"
+        content: "{{ service_token_create.stdout }}\n"
+        mode: '0600'
+      when: service_token_exists.rc == 1
+      no_log: true
