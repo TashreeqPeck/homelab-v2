@@ -1,0 +1,7 @@
+# Ignore all files in the 99-image directory, this is for staging the ISO
+99-image/*
+!99-image/.gitkeep
+
+# Ignore generated runtime artifacts while keeping directory scaffold tracked.
+98-runtime/*
+!98-runtime/.gitkeep
