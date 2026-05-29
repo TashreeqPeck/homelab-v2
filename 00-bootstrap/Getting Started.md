@@ -6,7 +6,7 @@ Bootstrap in this repository runs a Windows-native TinyPXE workflow for PXE-inst
 2. Turn off secure boot
 3. Connect the target to the network you are serving PXE on
 
-**Note**: The installer disk target is controlled by filters in [answer.toml](answer.toml). Review `disk-setup` carefully before unattended installs.
+**Note**: The installer disk target is controlled by filters in [answer.template.toml](answer.template.toml). Review `disk-setup` carefully before unattended installs.
 
 ## Configure bootstrap machine (Windows)
 1. Install and set up wsl.
@@ -28,20 +28,18 @@ wsl --shutdown
 ```
 
 ## Configure secrets
-Secret management is done using 1Password. This project assumes that you add all the secrets for this project into the "Homelab" vault. Ensure that the names in 1Password matches the names specified by the project.
+Secret management is done using 1Password. This project assumes that you add all required secrets into the "Homelab" vault. Ensure that the names in 1Password match the names specified by the project.
 
 **Ensure you are signed in to the 1Password CLI. See the [docs](https://www.1password.dev/cli/get-started#windows-2).**
 
 **Note**: To use different names from 1Password change the corresponding secret references.
 
-|Name|Use|
-|-|-|
-|Proxmox root| The password for the proxmox root user|
+The current required secret references are documented in [Secrets.md](Secrets.md).
 
 
 ## Bootstrap PXE install with Windows
 1. Verify the Proxmox ISO exists inside [99-image](../99-image).
-2. Create or edit `00-bootstrap/answer.toml`.
+2. Create or edit `00-bootstrap/answer.template.toml`.
 3. Start the Windows/TinyPXE workflow from PowerShell:
 ```
 ./00-bootstrap/01-start-pxe-server.ps1

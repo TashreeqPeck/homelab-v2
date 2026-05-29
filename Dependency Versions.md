@@ -15,7 +15,7 @@ The following are the tools used to develop this server and their versions at th
 | proxmox-auto-install-assistant | proxmox-installer-common v9.2.5 |
 
 ## Bootstrap-Installed Packages
-These packages are installed by [90-scripts/bootstrap/install-dependencies.sh](90-scripts/bootstrap/install-dependencies.sh).
+These packages are installed by [90-bootstrap-scripts/bootstrap/install-dependencies.sh](90-bootstrap-scripts/bootstrap/install-dependencies.sh).
 
 | Package | Version Available During Development |
 | - | - |

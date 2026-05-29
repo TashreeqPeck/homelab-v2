@@ -3,9 +3,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BOOT_SERVER_PY="$REPO_ROOT/90-scripts/bootstrap/boot_server.py"
-source "$SCRIPT_DIR/../logging/common-logging.sh"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BOOT_SERVER_PY="$REPO_ROOT/90-bootstrap-scripts/bootstrap/boot_server.py"
+source "$REPO_ROOT/90-bootstrap-scripts/logging/common-logging.sh"
 
 ensure_debian_wsl
 

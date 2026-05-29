@@ -7,8 +7,8 @@ $ErrorActionPreference = 'Stop'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
-$InstallScript = Join-Path $RepoRoot '90-scripts/bootstrap/install-dependencies.sh'
-$CommonLoggingScript = Join-Path $RepoRoot '90-scripts/logging/common-logging.ps1'
+$InstallScript = Join-Path $RepoRoot '90-bootstrap-scripts/bootstrap/install-dependencies.sh'
+$CommonLoggingScript = Join-Path $RepoRoot '90-bootstrap-scripts/logging/common-logging.ps1'
 
 if (-not (Test-Path -LiteralPath $CommonLoggingScript -PathType Leaf)) {
 	throw "Common logging script not found: $CommonLoggingScript"
@@ -16,6 +16,20 @@ if (-not (Test-Path -LiteralPath $CommonLoggingScript -PathType Leaf)) {
 
 . $CommonLoggingScript
 Initialize-LogContext -ScriptPath $MyInvocation.MyCommand.Path
+
+function Install-Python3 {
+	$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+	if (-not $pythonCmd) {
+		$pythonCmd = Get-Command python3 -ErrorAction SilentlyContinue
+	}
+
+	if ($pythonCmd) {
+		Write-Log "Python already installed: $($pythonCmd.Source)"
+		return
+	}
+
+	Fail 'Python is required for the bootstrap server. Install Python from https://www.python.org/downloads/ and ensure it is in PATH.'
+}
 
 function Install-1PasswordCli {
 	$opCmd = Get-Command op -ErrorAction SilentlyContinue
@@ -57,6 +71,7 @@ if ($LASTEXITCODE -ne 0) {
 	Fail 'Dependency installation failed in WSL.'
 }
 
+Install-Python3
 Install-1PasswordCli
 
 Write-Log 'Dependencies installed successfully.'

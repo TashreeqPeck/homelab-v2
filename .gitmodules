@@ -1,3 +1,3 @@
-[submodule "90-scripts/bootstrap/tinypxeserver"]
-	path = 90-scripts/bootstrap/tinypxeserver
+[submodule "90-bootstrap-scripts/bootstrap/tinypxeserver"]
+	path = 90-bootstrap-scripts/bootstrap/tinypxeserver
 	url = https://github.com/erwan2212/tinypxeserver

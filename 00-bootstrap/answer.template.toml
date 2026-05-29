@@ -12,3 +12,10 @@ source = "from-dhcp"
 [disk-setup]
 filesystem = "xfs"
 filter.DEVTYPE = "disk"
+
+[post-installation-webhook]
+url = "__PROXMOX_POST_INSTALL_WEBHOOK_URL__"
+
+[first-boot]
+source = "from-url"
+url = "__PROXMOX_FIRST_BOOT_URL__"
